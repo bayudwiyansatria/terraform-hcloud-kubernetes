@@ -1,6 +1,14 @@
 #-----------------------------------------------------------------------------------------------------------------------
 # Global
 #-----------------------------------------------------------------------------------------------------------------------
+locals {
+  worker_ids = flatten(module.worker.*.ids)
+  worker_ips = flatten(module.worker.*.ips)
+  depends_on = [
+    module.worker
+  ]
+}
+
 resource "hcloud_ssh_key" "admin" {
   count      = length(var.cluster_admin_ssh_keys)
   name       = "admin-${count.index + 1}"
@@ -25,12 +33,13 @@ module "master" {
 #-----------------------------------------------------------------------------------------------------------------------
 
 module "worker" {
+  count        = length(var.worker_type)
   source       = "bayudwiyansatria/server/hcloud"
   hcloud_token = var.hcloud_token
   server_keys  = hcloud_ssh_key.admin.*.id
-  server_name  = "${var.cluster_name}-worker"
-  server_count = var.worker_count
-  server_type  = var.worker_type
+  server_name  = "${var.cluster_name}-worker-${var.worker_type[count.index].type}"
+  server_count = var.worker_type[count.index].count
+  server_type  = var.worker_type[count.index].type
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -59,8 +68,8 @@ resource "hcloud_server_network" "master_network" {
 }
 
 resource "hcloud_server_network" "worker_network" {
-  count      = var.worker_count
-  server_id  = module.worker.ids[count.index]
+  count      = length(local.worker_ids)
+  server_id  = local.worker_ids[count.index]
   network_id = module.network.ids
   depends_on = [
     module.worker,
@@ -76,7 +85,7 @@ module "kubernetes" {
   source          = "bayudwiyansatria/cloud-bootstrap/kubernetes"
   docker_enabled  = true
   master_host     = module.master.ips
-  worker_host     = module.worker.ips
+  worker_host     = local.worker_ips
   ssh_private_key = var.cluster_admin_ssh_access
   depends_on      = [
     module.master,
