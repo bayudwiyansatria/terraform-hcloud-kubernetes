@@ -31,14 +31,20 @@ variable "master_type" {
   default     = "cx21"
 }
 
-variable "worker_count" {
-  type        = number
-  description = "Number of workers nodes"
-  default     = 2
-}
-
 variable "worker_type" {
-  type        = string
+  type        = list(object({
+    count = number,
+    type  = string
+  }))
   description = "For more types have a look at https://www.hetzner.de/cloud"
-  default     = "cx21"
+  default     = [
+    {
+      count = 1
+      type  = "cx21",
+    },
+    {
+      count = 1
+      type  = "cpx11",
+    }
+  ]
 }
