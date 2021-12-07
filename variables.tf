@@ -4,6 +4,15 @@ variable "hcloud_token" {
   description = "Hcloud API Key"
 }
 
+variable "load_balancer_name" {
+  type        = string
+  description = "nginx-ingress-controller"
+  default     = "default-load-balancer"
+}
+
+#-----------------------------------------------------------------------------------------------------------------------
+# Clusters
+#-----------------------------------------------------------------------------------------------------------------------
 variable "cluster_name" {
   type        = string
   description = "Kubernetes Cluster Name"

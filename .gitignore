@@ -9,6 +9,7 @@
 *.lock.hcl
 *.tfstate*
 secrets/
+tests/
 
 # User-specific files
 *.suo

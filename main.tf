@@ -1,18 +1,18 @@
 #-----------------------------------------------------------------------------------------------------------------------
-# Global
+# Operations
 #-----------------------------------------------------------------------------------------------------------------------
-locals {
-  worker_ids = flatten(module.worker.*.ids)
-  worker_ips = flatten(module.worker.*.ips)
-  depends_on = [
-    module.worker
-  ]
-}
-
 resource "hcloud_ssh_key" "admin" {
   count      = length(var.cluster_admin_ssh_keys)
   name       = "admin-${count.index + 1}"
   public_key = var.cluster_admin_ssh_keys[count.index]
+}
+
+resource "local_file" "kube_config" {
+  sensitive_content = module.kubernetes.kube_config
+  filename          = "${path.root}/kube_config"
+  depends_on        = [
+    module.kubernetes
+  ]
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -21,6 +21,7 @@ resource "hcloud_ssh_key" "admin" {
 
 module "master" {
   source       = "bayudwiyansatria/server/hcloud"
+  version      = "1.0.0"
   hcloud_token = var.hcloud_token
   server_keys  = hcloud_ssh_key.admin.*.id
   server_name  = "${var.cluster_name}-master"
@@ -35,6 +36,7 @@ module "master" {
 module "worker" {
   count        = length(var.worker_type)
   source       = "bayudwiyansatria/server/hcloud"
+  version      = "1.0.0"
   hcloud_token = var.hcloud_token
   server_keys  = hcloud_ssh_key.admin.*.id
   server_name  = "${var.cluster_name}-worker-${var.worker_type[count.index].type}"
@@ -52,9 +54,21 @@ module "network" {
 }
 
 module "load_balancer" {
-  source       = "bayudwiyansatria/load-balancer/hcloud"
-  hcloud_token = var.hcloud_token
-  network_zone = "eu-central"
+  source             = "bayudwiyansatria/load-balancer/hcloud"
+  version            = "1.0.0"
+  load_balancer_name = var.load_balancer_name
+  hcloud_token       = var.hcloud_token
+  network_zone       = "eu-central"
+}
+
+resource "hcloud_load_balancer_target" "load_balancer_target" {
+  count            = var.master_count
+  type             = "server"
+  server_id        = module.master.ids[0]
+  load_balancer_id = module.load_balancer.ids
+  depends_on       = [
+    module.master
+  ]
 }
 
 resource "hcloud_server_network" "master_network" {
@@ -83,6 +97,7 @@ resource "hcloud_server_network" "worker_network" {
 
 module "kubernetes" {
   source          = "bayudwiyansatria/cloud-bootstrap/kubernetes"
+  version         = "1.0.1"
   docker_enabled  = true
   master_host     = module.master.ips
   worker_host     = local.worker_ips
@@ -159,3 +174,4 @@ resource "null_resource" "csi" {
     null_resource.cloud-controller-manager
   ]
 }
+
