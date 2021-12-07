@@ -57,3 +57,39 @@ variable "worker_type" {
     }
   ]
 }
+
+
+# Fix Needed
+# https://github.com/hashicorp/terraform/issues/2430#issuecomment-188704400
+variable "cluster_endpoint" {
+  type        = string
+  description = "Cluster Endpoint"
+  default     = ""
+}
+
+variable "cluster_ca_certificate" {
+  type        = string
+  description = "Cluster CA Certificate PEM Format"
+  default     = ""
+}
+
+variable "cluster_client_certificate" {
+  type        = string
+  description = "Cluster Client Certificate PEM Format"
+  default     = ""
+}
+
+variable "cluster_client_key" {
+  type        = string
+  description = "Cluster Client Key PEM Format"
+  default     = ""
+}
+
+#-----------------------------------------------------------------------------------------------------------------------
+# Addons
+#-----------------------------------------------------------------------------------------------------------------------
+variable "enabled_nginx_ingress" {
+  type        = bool
+  description = "Enable Nginx Ingress Controller"
+  default     = false
+}

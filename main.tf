@@ -7,14 +7,6 @@ resource "hcloud_ssh_key" "admin" {
   public_key = var.cluster_admin_ssh_keys[count.index]
 }
 
-resource "local_file" "kube_config" {
-  sensitive_content = module.kubernetes.kube_config
-  filename          = "${path.root}/kube_config"
-  depends_on        = [
-    module.kubernetes
-  ]
-}
-
 #-----------------------------------------------------------------------------------------------------------------------
 # Master
 #-----------------------------------------------------------------------------------------------------------------------
@@ -175,3 +167,21 @@ resource "null_resource" "csi" {
   ]
 }
 
+#-----------------------------------------------------------------------------------------------------------------------
+# Addons
+#-----------------------------------------------------------------------------------------------------------------------
+# Nginx Ingress Resource Will Be Created On Kubernetes Cluster
+# Load Balancer Is Expected To Be Available
+# Notes:
+# Delete Nginx Ingress Resource After It's Created Will Cause Old Load Balancer Deleted
+# Known Issues https://github.com/hetznercloud/hcloud-cloud-controller-manager/issues/249
+
+module "nginx-ingress-controller" {
+  source                     = "./modules/nginx-ingress-controller"
+  enabled                    = var.enabled_nginx_ingress
+  load_balancer_name         = var.load_balancer_name
+  depends_on = [
+    null_resource.cloud-controller-manager,
+    null_resource.csi
+  ]
+}
