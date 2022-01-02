@@ -1,9 +1,9 @@
 output "kube_config" {
   sensitive   = true
   description = "Cluster Config Files"
-  value       = data.local_file.kube_config
+  value       = module.kubernetes.kube_config
   depends_on  = [
-    data.local_file.kube_config
+    module.kubernetes.kube_config
   ]
 }
 
