@@ -41,8 +41,10 @@ module "worker" {
 #-----------------------------------------------------------------------------------------------------------------------
 
 module "network" {
-  source       = "bayudwiyansatria/network/hcloud"
-  hcloud_token = var.hcloud_token
+  source         = "bayudwiyansatria/network/hcloud"
+  version        = "1.0.0"
+  hcloud_token   = var.hcloud_token
+  network_subnet = var.network_subnet
 }
 
 module "load_balancer" {
@@ -164,24 +166,5 @@ resource "null_resource" "csi" {
 
   depends_on = [
     null_resource.cloud-controller-manager
-  ]
-}
-
-#-----------------------------------------------------------------------------------------------------------------------
-# Addons
-#-----------------------------------------------------------------------------------------------------------------------
-# Nginx Ingress Resource Will Be Created On Kubernetes Cluster
-# Load Balancer Is Expected To Be Available
-# Notes:
-# Delete Nginx Ingress Resource After It's Created Will Cause Old Load Balancer Deleted
-# Known Issues https://github.com/hetznercloud/hcloud-cloud-controller-manager/issues/249
-
-module "nginx-ingress-controller" {
-  source                     = "./modules/nginx-ingress-controller"
-  enabled                    = var.enabled_nginx_ingress
-  load_balancer_name         = var.load_balancer_name
-  depends_on = [
-    null_resource.cloud-controller-manager,
-    null_resource.csi
   ]
 }
